@@ -4,6 +4,7 @@ import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 import { MetaMaskConnector } from "wagmi/connectors/metaMask";
 
 import * as chains from "wagmi/chains";
+import { publicProvider } from "wagmi/providers/public";
 
 const defaultChain = process.env.DEFAULT_CHAIN! as keyof typeof chains;
 

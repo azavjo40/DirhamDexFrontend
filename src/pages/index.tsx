@@ -17,9 +17,11 @@ export default function Home() {
   });
 
   const { data: balance } = useTokenBalanceOf({
-    address: process.env.ADSRESS_CONTRACT! as Address,
+    // address: process.env.ADSRESS_CONTRACT! as Address,
+    address: "0x85C4Cd0a44Bfa751F9F6B9030479d0c73Ff4FCb5" as Address,
     args: [address! as Address],
-    watch: !!address,
+    watch: true,
+    enabled: !!address && !!process.env.ADSRESS_CONTRACT,
   });
 
   console.log(balance);
