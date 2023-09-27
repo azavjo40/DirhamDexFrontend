@@ -6,6 +6,8 @@ import { MetaMaskConnector } from "wagmi/connectors/metaMask";
 import * as chains from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 
+import "src/styles/globals.css";
+
 const defaultChain = process.env.DEFAULT_CHAIN! as keyof typeof chains;
 
 const { provider, webSocketProvider } = configureChains(
