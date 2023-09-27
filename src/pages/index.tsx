@@ -1,14 +1,14 @@
 import { useDirhamV1BalanceOf, useDirhamV1Mint, usePrepareDirhamV1Mint } from "@/contracts";
 import { Address, useAccount, useConnect, useDisconnect } from "wagmi";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BigNumber } from "ethers";
 
 export default function Home() {
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
-  const [value, setvalue] = useState(0);
+  const [value, setvalue] = useState("");
 
-  const { connect, connectors, isLoading } = useConnect({
+  const { connect, connectors } = useConnect({
     onSuccess: async (data, { connector }) => {
       await connector.watchAsset?.({
         address: data.account as Address,
@@ -28,10 +28,14 @@ export default function Home() {
 
   const { config } = usePrepareDirhamV1Mint({
     address: process.env.DIRHAM_ADSRESS! as Address,
-    args: [BigNumber.from(value)],
+    args: [BigNumber.from(Number(value))],
   });
 
-  const { write } = useDirhamV1Mint(config);
+  const { write, isSuccess, isLoading: isLoadingAdd } = useDirhamV1Mint(config);
+
+  useEffect(() => {
+    setvalue("");
+  }, [isSuccess]);
 
   return (
     <div className="h-screen flex justify-center items-center">
@@ -56,16 +60,18 @@ export default function Home() {
                 type="text"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                 placeholder="Enter HDH"
-                onChange={(event) => setvalue(Number(event.target.value))}
+                onChange={(event) => setvalue(event.target.value)}
+                value={value}
               />
             </div>
           )}
           {isConnected && (
             <button
+              disabled={isLoadingAdd}
               onClick={() => (value && write ? write() : "")}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              Add DHM
+              {isLoadingAdd ? "Adding..." : "Add DHM"}
             </button>
           )}
         </div>
