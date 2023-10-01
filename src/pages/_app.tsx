@@ -7,6 +7,8 @@ import * as chains from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 
 import "src/styles/globals.css";
+import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
+import { InjectedConnector } from "wagmi/connectors/injected";
 
 const defaultChain = process.env.DEFAULT_CHAIN! as keyof typeof chains;
 
@@ -28,7 +30,13 @@ const client = createClient({
   provider,
   webSocketProvider,
   connectors: [
-    new MetaMaskConnector({
+    new WalletConnectConnector({
+      chains: [chains[defaultChain]],
+      options: {
+        projectId: process.env.WALLET_CONNECT_PROJECT_ID!,
+      },
+    }),
+    new InjectedConnector({
       chains: [chains[defaultChain]],
       options: {
         shimDisconnect: true,

@@ -12,6 +12,7 @@ module.exports = {
     USDT_ADDRESS: process.env.USDT_ADDRESS,
     BUSD_ADDRESS: process.env.BUSD_ADDRESS,
     USDC_ADDRESS: process.env.USDC_ADDRESS,
+    WALLET_CONNECT_PROJECT_ID: process.env.WALLET_CONNECT_PROJECT_ID,
   },
   dirs: [
     'pages',
