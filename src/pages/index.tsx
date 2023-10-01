@@ -35,12 +35,12 @@ export default function Home() {
     enabled: !!address && !!process.env.DIRHAM_ADSRESS,
   });
 
-  const { config } = usePrepareDexContractBuyTokens({
-    address: process.env.DEX_CONTRACT_ADSRESS! as Address,
-    args: [process.env.USDT_ADDRESS! as Address, BigNumber.from(RATE), BigNumber.from(Number(value))],
-  });
+  // const { config } = usePrepareDexContractBuyTokens({
+  //   address: process.env.DEX_CONTRACT_ADSRESS! as Address,
+  //   args: [process.env.USDT_ADDRESS! as Address, BigNumber.from(RATE), BigNumber.from(Number(value))],
+  // });
 
-  const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
+  // const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
 
   const { config: configDirhamM } = usePrepareDirhamMint({
     address: process.env.DIRHAM_ADSRESS! as Address,
@@ -51,10 +51,9 @@ export default function Home() {
 
   useEffect(() => {
     setvalue("");
-  }, [isSuccess, isSuccessMint]);
+  }, [isSuccessMint]);
 
   const buyTokents = () => {
-    console.log(write);
     try {
       // value && write && write();
       value && writeMint && writeMint();
@@ -105,11 +104,11 @@ export default function Home() {
 
           {isConnected && (
             <button
-              disabled={isLoadingAdd || isSuccessMint}
+              disabled={isSuccessMint}
               onClick={() => buyTokents()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {isLoadingAdd || isSuccessMint ? "Adding..." : "Add DHM"}
+              {isSuccessMint ? "Adding..." : "Add DHM"}
             </button>
           )}
         </div>
