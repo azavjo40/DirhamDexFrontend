@@ -6,7 +6,7 @@ export default defineConfig({
   contracts: [],
   plugins: [
     hardhat({
-      project: "../hardhat-contract",
+      project: "../contract-hardhat",
     }),
     actions({
       readContract: true,

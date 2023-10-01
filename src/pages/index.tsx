@@ -1,5 +1,11 @@
-import { useDirhamV1BalanceOf, useDirhamV1Mint, usePrepareDirhamV1Mint } from "@/contracts";
-import { Address, useAccount, useConnect, useDisconnect } from "wagmi";
+import {
+  useDirhamBalanceOf,
+  usePrepareDexContractBuyTokens,
+  useDexContractBuyTokens,
+  usePrepareDirhamMint,
+  useDirhamMint,
+} from "@/contracts";
+import { Address, useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from "wagmi";
 import React, { useEffect, useState } from "react";
 import { BigNumber } from "ethers";
 
@@ -7,6 +13,9 @@ export default function Home() {
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
   const [value, setvalue] = useState("");
+  const RATE = 1;
+  const { chain: activeChain } = useNetwork();
+  const { chains, error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
 
   const { connect, connectors } = useConnect({
     onSuccess: async (data, { connector }) => {
@@ -19,23 +28,40 @@ export default function Home() {
     },
   });
 
-  const { data: balance } = useDirhamV1BalanceOf({
+  const { data: balance } = useDirhamBalanceOf({
     address: process.env.DIRHAM_ADSRESS! as Address,
     args: [address! as Address],
     watch: true,
     enabled: !!address && !!process.env.DIRHAM_ADSRESS,
   });
 
-  const { config } = usePrepareDirhamV1Mint({
-    address: process.env.DIRHAM_ADSRESS! as Address,
-    args: [BigNumber.from(Number(value))],
+  const { config } = usePrepareDexContractBuyTokens({
+    address: process.env.DEX_CONTRACT_ADSRESS! as Address,
+    args: [process.env.USDT_ADDRESS! as Address, BigNumber.from(RATE), BigNumber.from(Number(value))],
   });
 
-  const { write, isSuccess, isLoading: isLoadingAdd } = useDirhamV1Mint(config);
+  const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
+
+  const { config: configDirhamM } = usePrepareDirhamMint({
+    address: process.env.DIRHAM_ADSRESS! as Address,
+    args: [address!, BigNumber.from(Number(value))],
+  });
+
+  const { write: writeMint, isSuccess: isSuccessMint } = useDirhamMint(configDirhamM);
 
   useEffect(() => {
     setvalue("");
-  }, [isSuccess]);
+  }, [isSuccess, isSuccessMint]);
+
+  const buyTokents = () => {
+    console.log(write);
+    try {
+      // value && write && write();
+      value && writeMint && writeMint();
+    } catch (error) {
+      console.error("Error occurred while adding DHM:", error);
+    }
+  };
 
   return (
     <div className="h-screen flex justify-center items-center">
@@ -54,6 +80,17 @@ export default function Home() {
               </button>
             ))}
           </div>
+          <div className="flex space-x-4 flex-col">
+            {isConnected && activeChain?.name !== chains[0]?.name && (
+              <button
+                className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                onClick={() => switchNetwork?.(chains[0].id)}
+              >
+                Switch to {chains[0]?.name}
+                {isLoading && pendingChainId === chains[0]?.id && " (switching)"}
+              </button>
+            )}
+          </div>
           {isConnected && (
             <div>
               <input
@@ -65,13 +102,14 @@ export default function Home() {
               />
             </div>
           )}
+
           {isConnected && (
             <button
-              disabled={isLoadingAdd}
-              onClick={() => (value && write ? write() : "")}
+              disabled={isLoadingAdd || isSuccessMint}
+              onClick={() => buyTokents()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {isLoadingAdd ? "Adding..." : "Add DHM"}
+              {isLoadingAdd || isSuccessMint ? "Adding..." : "Add DHM"}
             </button>
           )}
         </div>
