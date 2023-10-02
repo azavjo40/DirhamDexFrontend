@@ -1,22 +1,5 @@
-import {
-  useDirhamBalanceOf,
-  usePrepareDexContractBuyTokens,
-  useDexContractBuyTokens,
-  usePrepareDirhamMint,
-  useDirhamMint,
-  usePrepareErc20Approve,
-  useErc20Approve,
-  useErc20Allowance,
-} from "@/contracts";
-import {
-  Address,
-  useAccount,
-  useConnect,
-  useDisconnect,
-  useNetwork,
-  useSwitchNetwork,
-  useWaitForTransaction,
-} from "wagmi";
+import { usePrepareDexContractBuyTokens, useDexContractBuyTokens } from "@/contracts";
+import { Address, useAccount, useBalance, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from "wagmi";
 import React, { useEffect, useState } from "react";
 import { BigNumber } from "ethers";
 
@@ -38,61 +21,34 @@ export default function Home() {
     },
   });
 
-  const { data: balance } = useDirhamBalanceOf({
-    address: process.env.DIRHAM_ADSRESS! as Address,
-    args: [address! as Address],
-    watch: true,
-    enabled: !!address && !!process.env.DIRHAM_ADSRESS,
-  });
-
-  // const { data: allowance } = useErc20Allowance({
-  //   address: process.env.USDT_ADDRESS! as Address,
-  //   args: [address!, process.env.DEX_CONTRACT_ADSRESS as Address],
+  // const { data: allowance } = useErc20BalanceOf({
+  //   address: process.env.DIRHAM_ADSRESS! as Address,
+  //   args: [address!],
   //   watch: false,
   // });
 
-  // const { config: approveConfig } = usePrepareErc20Approve({
-  //   address: process.env.USDT_ADDRESS! as Address,
-  //   args: [process.env.DEX_CONTRACT_ADSRESS! as Address, BigNumber.from(Number(value))],
-  //   enabled: false,
-  // });
+  // console.log(allowance?.toString);
 
-  // const {
-  //   isLoading: approveLoading,
-  //   isSuccess: approveSuccess,
-  //   write: approve,
-  //   data: approveData,
-  // } = useErc20Approve(approveConfig);
-
-  // const { data: approveReceipt } = useWaitForTransaction({
-  //   hash: approveData?.hash,
-  //   enabled: !allowance,
-  // });
-
-  // const { config } = usePrepareDexContractBuyTokens({
-  //   address: process.env.DEX_CONTRACT_ADSRESS! as Address,
-  //   args: [process.env.USDT_ADDRESS! as Address, BigNumber.from(Number(value))],
-  // });
-
-  // const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
-
-  const { config: configDirhamM } = usePrepareDirhamMint({
-    address: process.env.DIRHAM_ADSRESS! as Address,
-    args: [address!, BigNumber.from(Number(value) ?? 0)],
+  const { data: userBalance } = useBalance({
+    token: process.env.DIRHAM_ADSRESS as Address,
+    address,
+    watch: true,
   });
 
-  const { write: writeMint, isSuccess: isSuccessMint } = useDirhamMint(configDirhamM);
+  const { config } = usePrepareDexContractBuyTokens({
+    address: process.env.DEX_CONTRACT_ADSRESS! as Address,
+    args: [process.env.USDC_ADDRESS! as Address, BigNumber.from(Number(value))],
+  });
+
+  const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
 
   useEffect(() => {
     setvalue("");
-  }, [isSuccessMint]);
+  }, [isSuccess]);
 
   const buyTokents = () => {
-    // console.log(approveData?.hash, write);
     try {
-      // approveData?.hash && value && write && write();
-      value && writeMint && writeMint();
-      // !approveData?.hash && value && approve && approve();
+      value && write && write();
     } catch (error) {
       console.error("Error occurred while adding DHM:", error);
     }
@@ -103,7 +59,11 @@ export default function Home() {
       <div className="w-full max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="space-y-6">
           <h5 className="text-xl font-medium text-gray-900 dark:text-white">User account</h5>
-          {balance !== undefined && <p className="text-res-300">Balance {balance?.toString()} DHM</p>}
+          {userBalance !== undefined && (
+            <p className="text-res-300">
+              Balance {userBalance.value?.toString()} {userBalance.symbol}
+            </p>
+          )}
           <div className="flex flex-col">
             {isConnected && (
               <button
@@ -149,11 +109,11 @@ export default function Home() {
 
           {isConnected && (
             <button
-              disabled={isSuccessMint}
+              disabled={isLoadingAdd}
               onClick={() => buyTokents()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {isSuccessMint ? "Adding..." : "Add DHM"}
+              {isLoadingAdd ? "Adding..." : "Add DHM"}
             </button>
           )}
         </div>
