@@ -1,7 +1,22 @@
-import { usePrepareDexContractBuyTokens, useDexContractBuyTokens } from "@/contracts";
-import { Address, useAccount, useBalance, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from "wagmi";
+import {
+  usePrepareDexContractBuyTokens,
+  useDexContractBuyTokens,
+  usePrepareErc20Approve,
+  useErc20Approve,
+  useErc20BalanceOf,
+} from "@/contracts";
+import {
+  Address,
+  useAccount,
+  useBalance,
+  useConnect,
+  useDisconnect,
+  useNetwork,
+  useSwitchNetwork,
+  useWaitForTransaction,
+} from "wagmi";
 import React, { useEffect, useState } from "react";
-import { BigNumber } from "ethers";
+import { formatEther, parseEther } from "ethers/lib/utils.js";
 
 export default function Home() {
   const { disconnect } = useDisconnect();
@@ -21,23 +36,40 @@ export default function Home() {
     },
   });
 
-  // const { data: allowance } = useErc20BalanceOf({
-  //   address: process.env.DIRHAM_ADSRESS! as Address,
-  //   args: [address!],
-  //   watch: false,
+  // const { data: userBalance } = useBalance({
+  //   token: process.env.DIRHAM_ADSRESS as Address,
+  //   address,
+  //   watch: true,
   // });
 
-  // console.log(allowance?.toString);
-
-  const { data: userBalance } = useBalance({
-    token: process.env.DIRHAM_ADSRESS as Address,
-    address,
-    watch: true,
+  const { data: allowance } = useErc20BalanceOf({
+    address: process.env.DIRHAM_ADSRESS! as Address,
+    args: [address!],
+    watch: false,
   });
+
+  const amount = parseEther("1");
+
+  // const approveArgs = [process.env.DEX_CONTRACT_ADSRESS as Address, amount] as const;
+
+  // const { config: approveConfig } = usePrepareErc20Approve({
+  //   address: process.env.USDT_ADDRESS as Address,
+  //   args: approveArgs,
+  //   enabled: !!approveArgs,
+  // });
+
+  // const { write: approve, data: approveData } = useErc20Approve(approveConfig);
+
+  // const { data: approveReceipt } = useWaitForTransaction({
+  //   hash: approveData?.hash,
+  //   enabled: !amount,
+  // });
+
+  // console.log(approveData);
 
   const { config } = usePrepareDexContractBuyTokens({
     address: process.env.DEX_CONTRACT_ADSRESS! as Address,
-    args: [process.env.USDC_ADDRESS! as Address, BigNumber.from(Number(value))],
+    args: [process.env.USDC_ADDRESS! as Address, amount],
   });
 
   const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
@@ -46,24 +78,12 @@ export default function Home() {
     setvalue("");
   }, [isSuccess]);
 
-  const buyTokents = () => {
-    try {
-      value && write && write();
-    } catch (error) {
-      console.error("Error occurred while adding DHM:", error);
-    }
-  };
-
   return (
     <div className="h-screen flex justify-center items-center">
       <div className="w-full max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="space-y-6">
           <h5 className="text-xl font-medium text-gray-900 dark:text-white">User account</h5>
-          {userBalance !== undefined && (
-            <p className="text-res-300">
-              Balance {userBalance.value?.toString()} {userBalance.symbol}
-            </p>
-          )}
+          {allowance !== undefined && <p className="text-res-300">Balance {allowance?.toString()}</p>}
           <div className="flex flex-col">
             {isConnected && (
               <button
@@ -107,10 +127,18 @@ export default function Home() {
             </div>
           )}
 
+          {/* {isConnected && (
+            <button
+              onClick={() => approve && approve()}
+              className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            >
+              Approve
+            </button>
+          )} */}
+
           {isConnected && (
             <button
-              disabled={isLoadingAdd}
-              onClick={() => buyTokents()}
+              onClick={() => write && write()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
               {isLoadingAdd ? "Adding..." : "Add DHM"}
