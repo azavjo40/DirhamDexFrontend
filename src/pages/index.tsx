@@ -1,9 +1,4 @@
-import {
-  usePrepareDexContractBuyTokens,
-  useDexContractBuyTokens,
-  usePrepareErc20Approve,
-  useErc20Approve,
-} from "@/contracts";
+import { usePrepareErc20Approve, useErc20Approve, useDirhamBuyTokens, usePrepareDirhamBuyTokens } from "@/contracts";
 import {
   Address,
   useAccount,
@@ -24,10 +19,11 @@ export default function Home() {
   const { chain: activeChain } = useNetwork();
   const { chains, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
 
-  const gasOptions = {
-    gasPrice: parseUnits("50", "gwei"),
-    gasLimit: 21000,
-  };
+  // const { data: rate } = useExchangeExchangeRates({
+  //   address: process.env.DEX_CONTRACT_ADSRESS as Address,
+  //   args: [process.env.USDT_ADDRESS!],
+  //   watch: true,
+  // });
 
   const { connect, connectors } = useConnect({
     onSuccess: async (data, { connector }) => {
@@ -46,15 +42,9 @@ export default function Home() {
     watch: true,
   });
 
-  // const { data: allowance } = useErc20BalanceOf({
-  //   address: process.env.DIRHAM_ADSRESS! as Address,
-  //   args: [address!],
-  //   watch: !address,
-  // });
-
   const amount = parseEther(value === "" ? "0" : value);
 
-  const approveArgs = [process.env.DEX_CONTRACT_ADSRESS as Address, amount] as const;
+  const approveArgs = [process.env.DIRHAM_ADSRESS as Address, amount] as const;
 
   const { config: approveConfig } = usePrepareErc20Approve({
     address: process.env.USDT_ADDRESS as Address,
@@ -62,26 +52,24 @@ export default function Home() {
     enabled: !!approveArgs,
   });
 
-  const { write: approve, data: approveData } = useErc20Approve(approveConfig);
+  const { write: approve, data: approveData, isLoading: isLoadingApprove } = useErc20Approve(approveConfig);
 
   const { data: approveReceipt } = useWaitForTransaction({
     hash: approveData?.hash,
     enabled: !amount,
   });
 
-  const { config } = usePrepareDexContractBuyTokens({
-    address: process.env.DEX_CONTRACT_ADSRESS! as Address,
+  const { config } = usePrepareDirhamBuyTokens({
+    address: process.env.DIRHAM_ADSRESS! as Address,
     args: [process.env.USDC_ADDRESS! as Address, amount],
     enabled: !!approveData?.hash,
   });
 
-  console.log(approveReceipt);
-
-  const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
+  const { write: buy, isSuccess: isSuccessBuy, isLoading: isLoadingBuy } = useDirhamBuyTokens(config);
 
   useEffect(() => {
     setvalue("");
-  }, [isSuccess]);
+  }, [isSuccessBuy]);
 
   return (
     <div className="h-screen flex justify-center items-center">
@@ -141,16 +129,16 @@ export default function Home() {
               onClick={() => approve && approve()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              Approve
+              {isLoadingApprove ? "Approving..." : "Approve pay"}
             </button>
           )}
 
           {isConnected && approveData?.hash && (
             <button
-              onClick={() => write && write()}
+              onClick={() => buy && buy()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {isLoadingAdd ? "Adding..." : "Add DHM"}
+              {isLoadingBuy ? "Adding..." : "Buy DHM"}
             </button>
           )}
         </div>
