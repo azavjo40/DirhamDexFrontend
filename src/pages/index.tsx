@@ -45,7 +45,7 @@ export default function Home() {
   const { data: userBalance } = useBalance({
     token: process.env.DIRHAM_ADSRESS as Address,
     address,
-    watch: true,
+    watch: false,
   });
 
   const amount = parseEther(value === "" ? "0" : value);
@@ -117,7 +117,6 @@ export default function Home() {
           {isConnected && (
             <div>
               <input
-                type="text"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                 placeholder="Enter HDH"
                 onChange={(event) => setvalue(event.target.value)}
