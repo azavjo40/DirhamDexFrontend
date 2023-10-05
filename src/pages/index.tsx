@@ -1,4 +1,10 @@
-import { usePrepareErc20Approve, useErc20Approve, useDirhamBuyTokens, usePrepareDirhamBuyTokens } from "@/contracts";
+import {
+  usePrepareErc20Approve,
+  useErc20Approve,
+  useDirhamBuyTokens,
+  usePrepareDirhamBuyTokens,
+  useDirhamExchangeRates,
+} from "@/contracts";
 import {
   Address,
   useAccount,
@@ -19,11 +25,11 @@ export default function Home() {
   const { chain: activeChain } = useNetwork();
   const { chains, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
 
-  // const { data: rate } = useExchangeExchangeRates({
-  //   address: process.env.DEX_CONTRACT_ADSRESS as Address,
-  //   args: [process.env.USDT_ADDRESS!],
-  //   watch: true,
-  // });
+  const { data: rate } = useDirhamExchangeRates({
+    address: process.env.DIRHAM_ADSRESS as Address,
+    args: [process.env.USDT_ADDRESS as Address],
+    watch: true,
+  });
 
   const { connect, connectors } = useConnect({
     onSuccess: async (data, { connector }) => {
@@ -66,10 +72,6 @@ export default function Home() {
   });
 
   const { write: buy, isSuccess: isSuccessBuy, isLoading: isLoadingBuy } = useDirhamBuyTokens(config);
-
-  useEffect(() => {
-    setvalue("");
-  }, [isSuccessBuy]);
 
   return (
     <div className="h-screen flex justify-center items-center">
@@ -120,6 +122,7 @@ export default function Home() {
                 placeholder="Enter HDH"
                 onChange={(event) => setvalue(event.target.value)}
                 value={value}
+                type="number"
               />
             </div>
           )}
@@ -138,7 +141,7 @@ export default function Home() {
               onClick={() => buy && buy()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {isLoadingBuy ? "Adding..." : "Buy DHM"}
+              {isLoadingBuy ? "Paying..." : "Pay  " + Number(value) * (rate?.toNumber() ?? 0) + " USDT"}
             </button>
           )}
         </div>
