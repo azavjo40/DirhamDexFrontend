@@ -30,12 +30,12 @@ const client = createClient({
   provider,
   webSocketProvider,
   connectors: [
-    // new WalletConnectConnector({
-    //   chains: [chains[defaultChain]],
-    //   options: {
-    //     projectId: process.env.WALLET_CONNECT_PROJECT_ID!,
-    //   },
-    // }),
+    new WalletConnectConnector({
+      chains: [chains[defaultChain]],
+      options: {
+        projectId: process.env.WALLET_CONNECT_PROJECT_ID!,
+      },
+    }),
     new InjectedConnector({
       chains: [chains[defaultChain]],
       options: {
