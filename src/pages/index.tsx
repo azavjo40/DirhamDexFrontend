@@ -3,7 +3,6 @@ import {
   useDexContractBuyTokens,
   usePrepareErc20Approve,
   useErc20Approve,
-  useErc20BalanceOf,
 } from "@/contracts";
 import {
   Address,
@@ -16,14 +15,19 @@ import {
   useWaitForTransaction,
 } from "wagmi";
 import React, { useEffect, useState } from "react";
-import { formatEther, parseEther } from "ethers/lib/utils.js";
+import { parseEther, parseUnits } from "ethers/lib/utils.js";
 
 export default function Home() {
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
-  const [value, setvalue] = useState("1");
+  const [value, setvalue] = useState("0");
   const { chain: activeChain } = useNetwork();
   const { chains, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
+
+  const gasOptions = {
+    gasPrice: parseUnits("50", "gwei"),
+    gasLimit: 21000,
+  };
 
   const { connect, connectors } = useConnect({
     onSuccess: async (data, { connector }) => {
@@ -36,41 +40,42 @@ export default function Home() {
     },
   });
 
-  // const { data: userBalance } = useBalance({
-  //   token: process.env.DIRHAM_ADSRESS as Address,
-  //   address,
-  //   watch: true,
-  // });
-
-  const { data: allowance } = useErc20BalanceOf({
-    address: process.env.DIRHAM_ADSRESS! as Address,
-    args: [address!],
-    watch: false,
+  const { data: userBalance } = useBalance({
+    token: process.env.DIRHAM_ADSRESS as Address,
+    address,
+    watch: true,
   });
 
-  const amount = parseEther("1");
-
-  // const approveArgs = [process.env.DEX_CONTRACT_ADSRESS as Address, amount] as const;
-
-  // const { config: approveConfig } = usePrepareErc20Approve({
-  //   address: process.env.USDT_ADDRESS as Address,
-  //   args: approveArgs,
-  //   enabled: !!approveArgs,
+  // const { data: allowance } = useErc20BalanceOf({
+  //   address: process.env.DIRHAM_ADSRESS! as Address,
+  //   args: [address!],
+  //   watch: !address,
   // });
 
-  // const { write: approve, data: approveData } = useErc20Approve(approveConfig);
+  const amount = parseEther(value === "" ? "0" : value);
 
-  // const { data: approveReceipt } = useWaitForTransaction({
-  //   hash: approveData?.hash,
-  //   enabled: !amount,
-  // });
+  const approveArgs = [process.env.DEX_CONTRACT_ADSRESS as Address, amount] as const;
 
-  // console.log(approveData);
+  const { config: approveConfig } = usePrepareErc20Approve({
+    address: process.env.USDT_ADDRESS as Address,
+    args: approveArgs,
+    enabled: !!approveArgs,
+  });
+
+  const { write: approve, data: approveData } = useErc20Approve(approveConfig);
+
+  const { data: approveReceipt } = useWaitForTransaction({
+    hash: approveData?.hash,
+    enabled: !amount,
+  });
 
   const { config } = usePrepareDexContractBuyTokens({
     address: process.env.DEX_CONTRACT_ADSRESS! as Address,
     args: [process.env.USDC_ADDRESS! as Address, amount],
+    enabled: !!approveData?.hash,
   });
+
+  console.log(approveReceipt);
 
   const { write, isSuccess, isLoading: isLoadingAdd } = useDexContractBuyTokens(config);
 
@@ -83,7 +88,11 @@ export default function Home() {
       <div className="w-full max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="space-y-6">
           <h5 className="text-xl font-medium text-gray-900 dark:text-white">User account</h5>
-          {allowance !== undefined && <p className="text-res-300">Balance {allowance?.toString()}</p>}
+          {userBalance !== undefined && (
+            <p className="text-res-300">
+              Balance {userBalance?.formatted} {userBalance.symbol}
+            </p>
+          )}
           <div className="flex flex-col">
             {isConnected && (
               <button
@@ -127,16 +136,16 @@ export default function Home() {
             </div>
           )}
 
-          {/* {isConnected && (
+          {isConnected && !approveData?.hash && (
             <button
               onClick={() => approve && approve()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
               Approve
             </button>
-          )} */}
+          )}
 
-          {isConnected && (
+          {isConnected && approveData?.hash && (
             <button
               onClick={() => write && write()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
