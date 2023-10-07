@@ -1,9 +1,9 @@
 import {
   usePrepareErc20Approve,
   useErc20Approve,
-  useDirhamBuyTokens,
-  usePrepareDirhamBuyTokens,
-  useDirhamExchangeRates,
+  useExchangeBuyTokens,
+  usePrepareExchangeBuyTokens,
+  useExchangeExchangeRates,
 } from "@/contracts";
 import {
   Address,
@@ -16,7 +16,7 @@ import {
   useWaitForTransaction,
 } from "wagmi";
 import React, { useEffect, useState } from "react";
-import { parseEther, parseUnits } from "ethers/lib/utils.js";
+import { parseEther } from "ethers/lib/utils.js";
 
 export default function Home() {
   const { disconnect } = useDisconnect();
@@ -25,11 +25,13 @@ export default function Home() {
   const { chain: activeChain } = useNetwork();
   const { chains, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
 
-  const { data: rate } = useDirhamExchangeRates({
-    address: process.env.DIRHAM_ADSRESS as Address,
+  const { data: rate } = useExchangeExchangeRates({
+    address: process.env.EXCHANGE_ADDRESS as Address,
     args: [process.env.USDT_ADDRESS as Address],
     watch: true,
   });
+
+  // console.log(rate);
 
   const { connect, connectors } = useConnect({
     onSuccess: async (data, { connector }) => {
@@ -45,12 +47,12 @@ export default function Home() {
   const { data: userBalance } = useBalance({
     token: process.env.DIRHAM_ADSRESS as Address,
     address,
-    watch: false,
+    watch: true,
   });
 
   const amount = parseEther(value === "" ? "0" : value);
 
-  const approveArgs = [process.env.DIRHAM_ADSRESS as Address, amount] as const;
+  const approveArgs = [process.env.EXCHANGE_ADDRESS as Address, amount] as const;
 
   const { config: approveConfig } = usePrepareErc20Approve({
     address: process.env.USDT_ADDRESS as Address,
@@ -60,18 +62,22 @@ export default function Home() {
 
   const { write: approve, data: approveData, isLoading: isLoadingApprove } = useErc20Approve(approveConfig);
 
+  const { config } = usePrepareExchangeBuyTokens({
+    address: process.env.EXCHANGE_ADDRESS! as Address,
+    args: [process.env.USDC_ADDRESS! as Address, amount],
+    enabled: !!approveData?.hash,
+  });
+
+  const { write: buy, isSuccess: isSuccessBuy, isLoading: isLoadingBuy } = useExchangeBuyTokens(config);
+
   const { data: approveReceipt } = useWaitForTransaction({
     hash: approveData?.hash,
     enabled: !amount,
   });
 
-  const { config } = usePrepareDirhamBuyTokens({
-    address: process.env.DIRHAM_ADSRESS! as Address,
-    args: [process.env.USDC_ADDRESS! as Address, amount],
-    enabled: !!approveData?.hash,
-  });
-
-  const { write: buy, isSuccess: isSuccessBuy, isLoading: isLoadingBuy } = useDirhamBuyTokens(config);
+  useEffect(() => {
+    setvalue("0");
+  }, [isSuccessBuy]);
 
   return (
     <div className="h-screen flex justify-center items-center">
@@ -135,12 +141,13 @@ export default function Home() {
             </button>
           )}
 
-          {isConnected && approveData?.hash && (
+          {isConnected && (
             <button
               onClick={() => buy && buy()}
               className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {isLoadingBuy ? "Paying..." : "Pay  " + Number(value) * (rate?.toNumber() ?? 0) + " USDT"}
+              {/* {isLoadingBuy ? "Paying..." : "Pay  " + Number(value) * (rate?.toNumber() ?? 0) + " USDT"} */}
+              {isLoadingBuy ? "Paying..." : "Pay  " + Number(value) + " USDT"}
             </button>
           )}
         </div>
